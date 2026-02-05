@@ -55,20 +55,17 @@
     }
     .serif { font-family: 'Cormorant Garamond', serif; }
 
-    /* ----- Navigation ----- */
+    /* ----- Navigation (вверху страницы, уезжает при скролле) ----- */
     nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
+      position: relative;
       z-index: 100;
-    isolation: isolate;
+      isolation: isolate;
       padding: 24px 48px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
-      transition: background 0.3s, padding 0.3s, transform 0.35s var(--ease-out-expo);
+      background: var(--bg);
+      transition: background 0.3s, padding 0.3s;
     }
     nav.scrolled { background: rgba(10,10,10,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     nav a:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
@@ -108,12 +105,6 @@
       }
     }
 
-    /* ----- Hideable header on scroll ----- */
-    body.header-hidden nav,
-    body.header-hidden .scroll-progress {
-      transform: translateY(-100%);
-    }
-
     /* ----- Scroll progress ----- */
     .scroll-progress {
       position: fixed;
@@ -123,7 +114,7 @@
       height: 2px;
       background: linear-gradient(90deg, var(--accent), rgba(232,180,184,0.5));
       z-index: 101;
-      transition: width 0.08s var(--ease-out-expo), transform 0.35s var(--ease-out-expo);
+      transition: width 0.08s var(--ease-out-expo);
     }
 
     /* ----- Hero ----- */
@@ -750,29 +741,13 @@
       const pct = h > 0 ? (window.scrollY / h) * 100 : 0;
       if (scrollProgressEl) scrollProgressEl.style.width = pct + '%';
     }
-    let lastScrollY = window.scrollY;
-    let scrollTicking = false;
     function updateScroll() {
       const y = window.scrollY;
       nav.classList.toggle('scrolled', y > 80);
       if (scrollHint) scrollHint.classList.toggle('hidden', y > 150);
       updateScrollProgress();
-      if (y < 60) {
-        document.body.classList.remove('header-hidden');
-      } else if (y > lastScrollY && y > 120) {
-        document.body.classList.add('header-hidden');
-      } else {
-        document.body.classList.remove('header-hidden');
-      }
-      lastScrollY = y;
-      scrollTicking = false;
     }
-    window.addEventListener('scroll', () => {
-      if (!scrollTicking) {
-        requestAnimationFrame(updateScroll);
-        scrollTicking = true;
-      }
-    });
+    window.addEventListener('scroll', updateScroll);
     updateScrollProgress();
 
     const navLinks = document.querySelectorAll('nav a[href^="#"]');
