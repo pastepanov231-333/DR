@@ -361,21 +361,19 @@
       font-weight: 500;
     }
 
-    /* ----- Photos grid ----- */
+    /* ----- Photos grid (vertical list) ----- */
     .photos {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      max-width: 100%;
-    }
-    @media (max-width: 1024px) {
-      .photos { grid-template-columns: repeat(3, 1fr); gap: 18px; }
+      grid-template-columns: 1fr;
+      gap: 40px;
+      max-width: 720px;
+      margin: 0 auto;
     }
     @media (max-width: 640px) {
-      .photos { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      .photos { gap: 32px; max-width: 100%; }
       .photo-card {
-        min-height: 50vw;
-        min-height: min(50vw, 280px);
+        min-height: 60vw;
+        min-height: min(60vw, 420px);
       }
     }
     @media (max-width: 768px) {
@@ -391,7 +389,7 @@
     }
     .photo-card {
       position: relative;
-      aspect-ratio: 1;
+      aspect-ratio: 4/3;
       border-radius: 16px;
       overflow: hidden;
       background: var(--card-bg);
