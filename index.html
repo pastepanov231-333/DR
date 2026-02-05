@@ -68,7 +68,7 @@
       justify-content: space-between;
       align-items: center;
       background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
-      transition: background 0.3s, padding 0.3s;
+      transition: background 0.3s, padding 0.3s, transform 0.35s var(--ease-out-expo);
     }
     nav.scrolled { background: rgba(10,10,10,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
     nav a:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
@@ -108,6 +108,12 @@
       }
     }
 
+    /* ----- Hideable header on scroll ----- */
+    body.header-hidden nav,
+    body.header-hidden .scroll-progress {
+      transform: translateY(-100%);
+    }
+
     /* ----- Scroll progress ----- */
     .scroll-progress {
       position: fixed;
@@ -117,7 +123,7 @@
       height: 2px;
       background: linear-gradient(90deg, var(--accent), rgba(232,180,184,0.5));
       z-index: 101;
-      transition: width 0.08s var(--ease-out-expo);
+      transition: width 0.08s var(--ease-out-expo), transform 0.35s var(--ease-out-expo);
     }
 
     /* ----- Hero ----- */
@@ -359,13 +365,14 @@
     .photos {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
+      gap: 20px;
+      max-width: 100%;
     }
     @media (max-width: 1024px) {
-      .photos { grid-template-columns: repeat(3, 1fr); }
+      .photos { grid-template-columns: repeat(3, 1fr); gap: 18px; }
     }
     @media (max-width: 640px) {
-      .photos { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+      .photos { grid-template-columns: repeat(2, 1fr); gap: 12px; }
       .photo-card {
         min-height: 50vw;
         min-height: min(50vw, 280px);
@@ -389,7 +396,13 @@
       overflow: hidden;
       background: var(--card-bg);
       border: 1px solid var(--border);
-      transition: box-shadow 0.4s ease, border-radius 0.5s var(--ease-out-expo), border-color 0.4s ease;
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.55s var(--ease-out-expo), transform 0.55s var(--ease-out-expo), box-shadow 0.4s ease, border-radius 0.5s var(--ease-out-expo), border-color 0.4s ease;
+    }
+    .photo-card.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
     .photo-card:hover {
       box-shadow: 0 24px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,180,184,0.08);
@@ -739,10 +752,28 @@
       const pct = h > 0 ? (window.scrollY / h) * 100 : 0;
       if (scrollProgressEl) scrollProgressEl.style.width = pct + '%';
     }
-    window.addEventListener('scroll', () => {
-      nav.classList.toggle('scrolled', window.scrollY > 80);
-      if (scrollHint) scrollHint.classList.toggle('hidden', window.scrollY > 150);
+    let lastScrollY = window.scrollY;
+    let scrollTicking = false;
+    function updateScroll() {
+      const y = window.scrollY;
+      nav.classList.toggle('scrolled', y > 80);
+      if (scrollHint) scrollHint.classList.toggle('hidden', y > 150);
       updateScrollProgress();
+      if (y < 60) {
+        document.body.classList.remove('header-hidden');
+      } else if (y > lastScrollY && y > 120) {
+        document.body.classList.add('header-hidden');
+      } else {
+        document.body.classList.remove('header-hidden');
+      }
+      lastScrollY = y;
+      scrollTicking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!scrollTicking) {
+        requestAnimationFrame(updateScroll);
+        scrollTicking = true;
+      }
     });
     updateScrollProgress();
 
@@ -767,20 +798,27 @@
 
     const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
     const observerOptions = isMobile()
-      ? { threshold: 0, rootMargin: '80px 0px 80px 0px' }
-      : { threshold: 0.1, rootMargin: '0px 0px -20px 0px' };
+      ? { threshold: 0.05, rootMargin: '60px 0px 60px 0px' }
+      : { threshold: 0.08, rootMargin: '0px 0px -30px 0px' };
     const observer = new IntersectionObserver((entries) => {
+      const photoCards = document.querySelectorAll('.photo-card');
       entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add('visible');
+        if (entry.isIntersecting) {
+          if (entry.target.classList.contains('photo-card')) {
+            const idx = Array.from(photoCards).indexOf(entry.target);
+            entry.target.style.transitionDelay = `${idx * 0.055}s`;
+          }
+          entry.target.classList.add('visible');
+        }
       });
     }, observerOptions);
 
-    document.querySelectorAll('.text-block').forEach(el => observer.observe(el));
+    document.querySelectorAll('.photo-card, .text-block').forEach(el => observer.observe(el));
 
     if (isMobile()) {
       setTimeout(() => {
-        document.querySelectorAll('.text-block, .section-subtitle, .section-title').forEach(el => el.classList.add('visible'));
-      }, 400);
+        document.querySelectorAll('.photo-card, .text-block, .section-subtitle, .section-title').forEach(el => el.classList.add('visible'));
+      }, 500);
     }
 
     const titleObserver = new IntersectionObserver((entries) => {
